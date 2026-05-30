@@ -19,6 +19,13 @@ import { runVaultDoctor } from "./commands/vaultDoctor.js";
 import { runDocCreate } from "./commands/docCreate.js";
 import { runDocInfo } from "./commands/docInfo.js";
 import { runDocValidate } from "./commands/docValidate.js";
+import { runPatchSubmit } from "./commands/patchSubmit.js";
+import { runPatchDryRun } from "./commands/patchDryRun.js";
+import { runPatchApprove } from "./commands/patchApprove.js";
+import { runPatchReject } from "./commands/patchReject.js";
+import { runPatchRollback } from "./commands/patchRollback.js";
+import { runPatchStatus } from "./commands/patchStatus.js";
+import { runPatchShow } from "./commands/patchShow.js";
 
 const USAGE = `Usage: noumena <command> [options]
 
@@ -118,6 +125,94 @@ function main(): void {
       process.exit(2);
     }
     runDocValidate(vaultPath, docPath);
+    return;
+  }
+
+  if (group === "patch" && sub === "submit") {
+    const vaultPath = rest[0];
+    const docPath = rest[1];
+    const patchFile = rest[2];
+    if (!vaultPath || !docPath || !patchFile) {
+      process.stderr.write("Error: vault path, document path, and patch file required\n\n");
+      process.stderr.write(USAGE);
+      process.exit(2);
+    }
+    runPatchSubmit(vaultPath, docPath, patchFile);
+    return;
+  }
+
+  if (group === "patch" && sub === "dry-run") {
+    const vaultPath = rest[0];
+    const docPath = rest[1];
+    const patchFile = rest[2];
+    if (!vaultPath || !docPath || !patchFile) {
+      process.stderr.write("Error: vault path, document path, and patch file required\n\n");
+      process.stderr.write(USAGE);
+      process.exit(2);
+    }
+    runPatchDryRun(vaultPath, docPath, patchFile);
+    return;
+  }
+
+  if (group === "patch" && sub === "approve") {
+    const vaultPath = rest[0];
+    const reviewId = rest[1];
+    if (!vaultPath || !reviewId) {
+      process.stderr.write("Error: vault path and review ID required\n\n");
+      process.stderr.write(USAGE);
+      process.exit(2);
+    }
+    runPatchApprove(vaultPath, reviewId);
+    return;
+  }
+
+  if (group === "patch" && sub === "reject") {
+    const vaultPath = rest[0];
+    const reviewId = rest[1];
+    if (!vaultPath || !reviewId) {
+      process.stderr.write("Error: vault path and review ID required\n\n");
+      process.stderr.write(USAGE);
+      process.exit(2);
+    }
+    runPatchReject(vaultPath, reviewId);
+    return;
+  }
+
+  if (group === "patch" && sub === "rollback") {
+    const vaultPath = rest[0];
+    const patchId = rest[1];
+    if (!vaultPath || !patchId) {
+      process.stderr.write("Error: vault path and patch ID required\n\n");
+      process.stderr.write(USAGE);
+      process.exit(2);
+    }
+    runPatchRollback(vaultPath, patchId);
+    return;
+  }
+
+  if (group === "patch" && sub === "status") {
+    const vaultPath = rest[0];
+    const id = rest[1];
+    if (!vaultPath || !id) {
+      process.stderr.write("Error: vault path and ID required\n\n");
+      process.stderr.write(USAGE);
+      process.exit(2);
+    }
+    runPatchStatus(vaultPath, id);
+    return;
+  }
+
+  if (group === "patch" && sub === "show") {
+    const vaultPath = rest[0];
+    const id = rest[1];
+    if (!vaultPath || !id) {
+      process.stderr.write("Error: vault path and ID required\n\n");
+      process.stderr.write(USAGE);
+      process.exit(2);
+    }
+    const format = getOption("format");
+    const jsonMode = allArgs.includes("--json");
+    runPatchShow(vaultPath, id, format, jsonMode);
     return;
   }
 
