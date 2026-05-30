@@ -9,6 +9,7 @@ import { readdirSync } from "node:fs";
 import {
   validateDocument,
   loadInvalidFixture,
+  loadValidFixture,
   fixturePath,
 } from "@noumena/core";
 
@@ -568,6 +569,37 @@ describe("validateDocument — fixture-based invalid documents", () => {
       const expectedCodes = EXPECTED_FIXTURE_ERRORS.get(filename) ?? [];
       expect(actualCodes).toEqual(expectedCodes);
       expect(result.patchable).toBe(false);
+    });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Fixture-based tests — all valid fixtures pass with patchable: true
+// WI-5034224 AC-002 / AC-006: valid fixture DoD coverage.
+// ---------------------------------------------------------------------------
+
+describe("validateDocument — fixture-based valid documents", () => {
+  const validFixtureDir = fixturePath("validation/valid", "");
+  let validFiles: string[] = [];
+
+  try {
+    validFiles = readdirSync(validFixtureDir).filter((f) => f.endsWith(".html"));
+  } catch {
+    // Directory may not exist in test env
+  }
+
+  it("has at least one valid fixture", () => {
+    expect(validFiles.length).toBeGreaterThan(0);
+  });
+
+  for (const filename of validFiles) {
+    it(`${filename} passes with valid:true and patchable:true`, () => {
+      const html = loadValidFixture(filename);
+      const result = validateDocument(html);
+      expect(result.valid).toBe(true);
+      expect(result.patchable).toBe(true);
+      expect(result.fileClass).toBe("noumena_native");
+      expect(result.errors).toHaveLength(0);
     });
   }
 });
