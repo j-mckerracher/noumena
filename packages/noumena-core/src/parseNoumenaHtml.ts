@@ -41,6 +41,44 @@ const INLINE_ELEMENTS = new Set([
 ]);
 
 // ---------------------------------------------------------------------------
+// Required roles for research-note@1
+// ---------------------------------------------------------------------------
+
+const REQUIRED_ROLES: readonly string[] = [
+  "metadata", "summary", "notes", "evidence", "agent_events",
+];
+
+// ---------------------------------------------------------------------------
+// Valid conflict policies
+// ---------------------------------------------------------------------------
+
+const VALID_POLICIES = new Set<string>([
+  "append_only",
+  "replace_requires_clean_base",
+  "merge_text",
+  "manual_review",
+  "locked",
+]);
+
+// ---------------------------------------------------------------------------
+// Role → allowed conflict policies mapping
+// ---------------------------------------------------------------------------
+
+const ROLE_ALLOWED_POLICIES: Record<string, Set<string>> = {
+  metadata: new Set(["merge_text"]),
+  summary: new Set(["replace_requires_clean_base"]),
+  notes: new Set(["append_only"]),
+  evidence: new Set(["append_only"]),
+  agent_events: new Set(["append_only"]),
+};
+
+// ---------------------------------------------------------------------------
+// Document ID pattern: doc_ + 26 Crockford Base32 chars
+// ---------------------------------------------------------------------------
+
+const DOC_ID_PATTERN = /^doc_[0-9A-HJKMNP-TV-Z]{26}$/i;
+
+// ---------------------------------------------------------------------------
 // Minimal DOM interfaces (avoids needing global DOM types)
 // ---------------------------------------------------------------------------
 
@@ -60,11 +98,13 @@ interface DomElement extends DomNode {
   children: ArrayLike<DomElement>;
   childNodes: ArrayLike<DomNode>;
   querySelector(selector: string): DomElement | null;
+  querySelectorAll(selector: string): ArrayLike<DomElement>;
   getAttribute(name: string): string | null;
 }
 
 interface DomDocument {
   querySelector(selector: string): DomElement | null;
+  querySelectorAll(selector: string): ArrayLike<DomElement>;
 }
 
 // ---------------------------------------------------------------------------
@@ -75,8 +115,10 @@ interface DomDocument {
  * Parse HTML bytes into a NoumenaDocument model.
  *
  * Classification rules:
- *   - noumena_native: has Noumena schema meta, valid article structure
- *   - raw_html: valid HTML but not Noumena-native
+ *   - noumena_native: has Noumena schema meta, valid article structure, passes
+ *     all structural validation (required roles, no duplicates, valid metadata
+ *     JSON, no forbidden elements, valid conflict policies, etc.)
+ *   - raw_html: valid HTML but has no Noumena markers at all
  *   - invalid_noumena: has Noumena markers but fails structural requirements
  */
 export function parseNoumenaHtml(bytes: Buffer | string): ParseResult {
@@ -91,67 +133,121 @@ export function parseNoumenaHtml(bytes: Buffer | string): ParseResult {
     return { fileClass: "raw_html", document: null };
   }
 
-  // Check for Noumena schema meta tag
+  // -----------------------------------------------------------------------
+  // Detect Noumena markers — any of: schema meta, article, role attributes
+  // -----------------------------------------------------------------------
+
   const schemaMeta = doc.querySelector('meta[name="noumena:schema"]');
-  if (!schemaMeta) {
+  const articles = doc.querySelectorAll("article[data-noumena-document]");
+  const hasNoumenaRoles = doc.querySelector("[data-noumena-role]") !== null;
+
+  const hasMarkers =
+    schemaMeta !== null || articles.length > 0 || hasNoumenaRoles;
+
+  if (!hasMarkers) {
     return { fileClass: "raw_html", document: null };
   }
 
-  const schemaVersion = schemaMeta.getAttribute("content") ?? undefined;
+  // -----------------------------------------------------------------------
+  // Extract top-level metadata for result envelope
+  // -----------------------------------------------------------------------
 
-  // Check for document-id meta
+  const schemaVersion = schemaMeta?.getAttribute("content") ?? undefined;
   const docIdMeta = doc.querySelector('meta[name="noumena:document-id"]');
   const documentId = docIdMeta?.getAttribute("content") ?? undefined;
-
-  // Check for document-type meta
   const docTypeMeta = doc.querySelector('meta[name="noumena:document-type"]');
   const documentType = docTypeMeta?.getAttribute("content") ?? undefined;
-
-  // Get title
   const titleEl = doc.querySelector("title");
   const title = titleEl?.textContent ?? undefined;
 
-  // Find the article element
-  const article = doc.querySelector("article[data-noumena-document]");
-  if (!article) {
-    return {
-      fileClass: "invalid_noumena",
-      document: null,
-      schemaVersion,
-      documentType,
-      documentId,
-      title,
-    };
-  }
+  /** Shorthand: return invalid_noumena with envelope metadata. */
+  const invalid = (): ParseResult => ({
+    fileClass: "invalid_noumena",
+    document: null,
+    schemaVersion,
+    documentType,
+    documentId,
+    title,
+  });
 
-  // Parse article attributes
-  const articleAttrs: Record<string, string> = {};
-  for (let i = 0; i < article.attributes.length; i++) {
-    const attr = article.attributes[i]!;
-    articleAttrs[attr.name.toLowerCase()] = attr.value;
-  }
+  // -----------------------------------------------------------------------
+  // Structural validation
+  // -----------------------------------------------------------------------
 
+  // V1: Schema meta must exist
+  if (!schemaMeta) return invalid();
+
+  // V2: Schema version must be recognized
+  if (schemaVersion !== "noumena.html.v1") return invalid();
+
+  // V3: Doctype declaration required
+  if (!html.trimStart().toLowerCase().startsWith("<!doctype")) return invalid();
+
+  // V4: No forbidden noumena:revision meta
+  if (doc.querySelector('meta[name="noumena:revision"]')) return invalid();
+
+  // V5: Exactly one article[data-noumena-document]
+  if (articles.length !== 1) return invalid();
+
+  const article = articles[0]!;
+
+  // V6: Validate document IDs if present (non-boolean attribute values)
+  const articleDocAttr = article.getAttribute("data-noumena-document") ?? "";
+  if (articleDocAttr && !DOC_ID_PATTERN.test(articleDocAttr)) return invalid();
+
+  const articleDocIdAttr =
+    article.getAttribute("data-noumena-document-id") ?? "";
+  if (articleDocIdAttr && !DOC_ID_PATTERN.test(articleDocIdAttr))
+    return invalid();
+
+  if (documentId && !DOC_ID_PATTERN.test(documentId)) return invalid();
+
+  // -----------------------------------------------------------------------
+  // Parse blocks — support both data-noumena-block-id and data-block-id
+  // -----------------------------------------------------------------------
+
+  const articleAttrs = extractAttributes(article);
   const noumenaArticle: NoumenaArticle = { attributes: articleAttrs };
 
-  // Parse blocks (direct children of article with data-noumena-block-id)
   const blocks: NoumenaBlock[] = [];
   const roles = new Map<string, NoumenaBlock>();
+  const blockIds = new Set<string>();
+  const roleNames = new Set<string>();
 
   for (let ci = 0; ci < article.children.length; ci++) {
     const child = article.children[ci]!;
-    const blockId = child.getAttribute("data-noumena-block-id");
+    const blockId =
+      child.getAttribute("data-noumena-block-id") ??
+      child.getAttribute("data-block-id");
     if (!blockId) continue;
 
-    const role = child.getAttribute("data-noumena-role") ?? "";
-    const policy = (child.getAttribute("data-conflict-policy") ?? "") as ConflictPolicy;
+    // V7: No duplicate block IDs
+    if (blockIds.has(blockId)) return invalid();
+    blockIds.add(blockId);
 
+    const role = child.getAttribute("data-noumena-role") ?? "";
+    const policyStr = child.getAttribute("data-conflict-policy") ?? "";
+
+    // V8: No duplicate roles (non-empty roles only)
+    if (role && roleNames.has(role)) return invalid();
+    if (role) roleNames.add(role);
+
+    // V9: Conflict policy must be a known value (if present)
+    if (policyStr && !VALID_POLICIES.has(policyStr)) return invalid();
+
+    // V10: Required roles must use their designated policy (if policy present)
+    if (role && policyStr && role in ROLE_ALLOWED_POLICIES) {
+      if (!ROLE_ALLOWED_POLICIES[role]!.has(policyStr)) return invalid();
+    }
+
+    const policy = (policyStr || "") as ConflictPolicy;
     const element = parseElement(child);
     const block: NoumenaBlock = {
       blockId,
       role,
       policy,
       element,
-      blockHash: "", // computed later by computeBlockHash
+      blockHash: "",
     };
 
     blocks.push(block);
@@ -160,7 +256,18 @@ export function parseNoumenaHtml(bytes: Buffer | string): ParseResult {
     }
   }
 
-  // Parse metadata JSON from metadata block
+  // V11: All required roles must be present
+  for (const required of REQUIRED_ROLES) {
+    if (!roles.has(required)) return invalid();
+  }
+
+  // V12: Evidence and agent_events blocks must contain an <ol>
+  for (const listRole of ["evidence", "agent_events"]) {
+    const block = roles.get(listRole);
+    if (block && !hasOlChild(block.element)) return invalid();
+  }
+
+  // V13: Validate metadata JSON (must parse without error)
   let metadata: NoumenaMetadataV1 = {
     title: title ?? "",
     status: "draft",
@@ -169,22 +276,29 @@ export function parseNoumenaHtml(bytes: Buffer | string): ParseResult {
 
   const metadataBlock = roles.get("metadata");
   if (metadataBlock) {
-    for (const child of metadataBlock.element.children) {
-      if (child.type === "rawJson") {
-        try {
-          metadata = JSON.parse(child.json) as NoumenaMetadataV1;
-        } catch {
-          // Invalid JSON — leave default metadata
-        }
-        break;
+    const jsonStr = findRawJson(metadataBlock.element.children);
+    if (jsonStr !== null) {
+      try {
+        metadata = JSON.parse(jsonStr) as NoumenaMetadataV1;
+      } catch {
+        return invalid();
       }
     }
   }
 
+  // V14: No forbidden elements or javascript: URLs within article
+  if (containsForbiddenContent(article)) return invalid();
+
+  // -----------------------------------------------------------------------
+  // All validations passed — build NoumenaDocument
+  // -----------------------------------------------------------------------
+
+  const resolvedDocId = articleDocIdAttr || documentId || articleDocAttr || "";
+
   const noumenaDoc: NoumenaDocument = {
     schemaVersion: "noumena.html.v1",
     documentType: "research-note",
-    documentId: documentId ?? "",
+    documentId: resolvedDocId,
     title: metadata.title ?? title ?? "",
     metadata,
     article: noumenaArticle,
@@ -203,23 +317,84 @@ export function parseNoumenaHtml(bytes: Buffer | string): ParseResult {
 }
 
 // ---------------------------------------------------------------------------
+// Validation helpers
+// ---------------------------------------------------------------------------
+
+/** Check if a block element contains an <ol> child (direct element children). */
+function hasOlChild(element: BlockElement): boolean {
+  for (const child of element.children) {
+    if (child.type === "element" && child.element.tagName === "ol") return true;
+  }
+  return false;
+}
+
+/** Recursively search for rawJson content in block children. */
+function findRawJson(children: BlockChild[]): string | null {
+  for (const child of children) {
+    if (child.type === "rawJson") return child.json;
+    if (child.type === "element") {
+      const found = findRawJson(child.element.children);
+      if (found !== null) return found;
+    }
+  }
+  return null;
+}
+
+/** Check for forbidden elements (iframe, executable scripts) and javascript: URLs. */
+function containsForbiddenContent(article: DomElement): boolean {
+  // Forbidden: <iframe>
+  if (article.querySelectorAll("iframe").length > 0) return true;
+
+  // Forbidden: executable <script> (scripts without a non-JS data type)
+  const scripts = article.querySelectorAll("script");
+  for (let i = 0; i < scripts.length; i++) {
+    const script = scripts[i]!;
+    const type = (script.getAttribute("type") ?? "").toLowerCase().trim();
+    if (
+      type === "" ||
+      type === "text/javascript" ||
+      type === "application/javascript" ||
+      type === "module"
+    ) {
+      return true;
+    }
+  }
+
+  // Forbidden: javascript: URLs in href or src attributes
+  const allElements = article.querySelectorAll("*");
+  for (let i = 0; i < allElements.length; i++) {
+    const el = allElements[i]!;
+    for (const attrName of ["href", "src"]) {
+      const val = el.getAttribute(attrName);
+      if (val && val.trim().toLowerCase().startsWith("javascript:"))
+        return true;
+    }
+  }
+
+  return false;
+}
+
+// ---------------------------------------------------------------------------
 // Element parsing helpers
 // ---------------------------------------------------------------------------
+
+/** Extract all attributes from a DOM element as a lowercase key-value record. */
+function extractAttributes(el: DomElement): Record<string, string> {
+  const attrs: Record<string, string> = {};
+  for (let i = 0; i < el.attributes.length; i++) {
+    const attr = el.attributes[i]!;
+    attrs[attr.name.toLowerCase()] = attr.value;
+  }
+  return attrs;
+}
 
 /**
  * Parse a DOM Element into a BlockElement structure for serialization.
  */
 function parseElement(el: DomElement): BlockElement {
   const tagName = el.tagName.toLowerCase();
-  const attributes: Record<string, string> = {};
-
-  for (let i = 0; i < el.attributes.length; i++) {
-    const attr = el.attributes[i]!;
-    attributes[attr.name.toLowerCase()] = attr.value;
-  }
-
+  const attributes = extractAttributes(el);
   const children = parseChildren(el);
-
   return { tagName, attributes, children };
 }
 
@@ -232,13 +407,16 @@ function parseChildren(el: DomElement): BlockChild[] {
   const children: BlockChild[] = [];
 
   // Special case: metadata script block — extract raw JSON
-  if (
-    tagName === "script" &&
-    el.getAttribute("type") === "application/vnd.noumena.metadata+json"
-  ) {
-    const jsonText = el.textContent ?? "";
-    children.push({ type: "rawJson", json: jsonText.trim() });
-    return children;
+  if (tagName === "script") {
+    const type = (el.getAttribute("type") ?? "").toLowerCase().trim();
+    if (
+      type === "application/vnd.noumena.metadata+json" ||
+      type === "application/json"
+    ) {
+      const jsonText = el.textContent ?? "";
+      children.push({ type: "rawJson", json: jsonText.trim() });
+      return children;
+    }
   }
 
   for (let i = 0; i < el.childNodes.length; i++) {
@@ -253,12 +431,7 @@ function parseChildren(el: DomElement): BlockChild[] {
       // Element node
       const childEl = node as unknown as DomElement;
       const childTagName = childEl.tagName.toLowerCase();
-      const attrs: Record<string, string> = {};
-
-      for (let ai = 0; ai < childEl.attributes.length; ai++) {
-        const attr = childEl.attributes[ai]!;
-        attrs[attr.name.toLowerCase()] = attr.value;
-      }
+      const attrs = extractAttributes(childEl);
 
       const isInline = INLINE_ELEMENTS.has(childTagName);
       const isVoid = VOID_ELEMENTS.has(childTagName);
