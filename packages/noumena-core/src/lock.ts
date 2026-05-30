@@ -1,7 +1,7 @@
 /**
  * Vault write lock for Noumena.
  *
- * Phase 1 Implementation Plan §19 — Write lock:
+ * WI-5034224 — Phase 1 Implementation Plan §19 — Write lock:
  *   Lock path: <vault>/.noumena/locks/vault-write.lock/
  *   Acquired by atomically creating the lock directory.
  *   If fresh lock exists, return rejected with vault_write_lock_busy (exit 0).

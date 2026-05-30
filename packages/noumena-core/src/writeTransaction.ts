@@ -1,7 +1,7 @@
 /**
  * Write transaction for Noumena vault mutations.
  *
- * Phase 1 Implementation Plan §19.1 — Mutation write sequence:
+ * WI-5034224 — Phase 1 Implementation Plan §19.1 — Mutation write sequence:
  *   1.  Acquire vault write lock
  *   2.  Open SQLite transaction with BEGIN IMMEDIATE
  *   3.  Read current file bytes from disk

@@ -1,9 +1,9 @@
 /**
  * Tests for writeTransaction.ts — atomic write sequence.
  *
- * DoD: Atomic write: temp file + fsync + rename sequence
- * DoD: SQLite BEGIN IMMEDIATE wraps full mutation
- * DoD: Pre-mutation snapshot written for every applied patch
+ * WI-5034224 DoD: Atomic write: temp file + fsync + rename sequence
+ * WI-5034224 DoD: SQLite BEGIN IMMEDIATE wraps full mutation
+ * WI-5034224 DoD: Pre-mutation snapshot written for every applied patch
  */
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
