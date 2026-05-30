@@ -1,0 +1,14 @@
+{
+  "name": "noumena",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "pnpm -r run build",
+    "test:phase1": "pnpm -r run test",
+    "demo:phase1": "echo 'demo:phase1 placeholder'"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
