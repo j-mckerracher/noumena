@@ -1,0 +1,8 @@
+{
+  "schema": "noumena.patch.v1",
+  "clientPatchId": "propose-summary-fixture",
+  "base": { "revision": "sha256:fixture", "logicalVersion": 1, "blockHashes": {} },
+  "author": { "type": "agent", "name": "fixture" },
+  "intent": "Propose summary",
+  "ops": [{ "op": "propose_summary", "target": { "role": "summary" }, "content": { "html": "<p>Proposed summary.</p>" } }]
+}

@@ -1,0 +1,8 @@
+{
+  "schema": "noumena.patch.v1",
+  "clientPatchId": "stale-base-fixture",
+  "base": { "revision": "sha256:stale", "logicalVersion": 1, "blockHashes": {} },
+  "author": { "type": "agent", "name": "fixture" },
+  "intent": "Schema-valid stale base",
+  "ops": [{ "op": "append_note", "target": { "role": "notes" }, "text": "Still schema valid" }]
+}

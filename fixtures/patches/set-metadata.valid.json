@@ -1,0 +1,8 @@
+{
+  "schema": "noumena.patch.v1",
+  "clientPatchId": "set-metadata-fixture",
+  "base": { "revision": "sha256:fixture", "logicalVersion": 1, "blockHashes": {} },
+  "author": { "type": "agent", "name": "fixture" },
+  "intent": "Set metadata",
+  "ops": [{ "op": "set_metadata", "target": { "role": "metadata" }, "fields": { "tags": ["phase1"] } }]
+}

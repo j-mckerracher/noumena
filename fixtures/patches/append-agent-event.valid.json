@@ -1,0 +1,8 @@
+{
+  "schema": "noumena.patch.v1",
+  "clientPatchId": "append-agent-event-fixture",
+  "base": { "revision": "sha256:fixture", "logicalVersion": 1, "blockHashes": {} },
+  "author": { "type": "agent", "name": "fixture" },
+  "intent": "Append event",
+  "ops": [{ "op": "append_agent_event", "target": { "role": "agent_events" }, "text": "Agent event" }]
+}

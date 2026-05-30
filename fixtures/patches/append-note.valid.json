@@ -1,0 +1,8 @@
+{
+  "schema": "noumena.patch.v1",
+  "clientPatchId": "append-note-fixture",
+  "base": { "revision": "sha256:fixture", "logicalVersion": 1, "blockHashes": {} },
+  "author": { "type": "agent", "name": "fixture" },
+  "intent": "Append note",
+  "ops": [{ "op": "append_note", "target": { "role": "notes" }, "text": "A new note" }]
+}

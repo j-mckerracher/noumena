@@ -1,0 +1,8 @@
+{
+  "schema": "noumena.patch.v1",
+  "clientPatchId": "append-evidence-fixture",
+  "base": { "revision": "sha256:fixture", "logicalVersion": 1, "blockHashes": {} },
+  "author": { "type": "agent", "name": "fixture" },
+  "intent": "Append evidence",
+  "ops": [{ "op": "append_evidence", "target": { "role": "evidence" }, "text": "Evidence item", "url": "https://example.com" }]
+}

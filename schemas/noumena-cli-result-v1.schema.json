@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Noumena CLI Result v1",
+  "type": "object",
+  "required": ["schema", "command", "status"],
+  "properties": {
+    "schema": { "const": "noumena.cli.result.v1" },
+    "command": { "type": "string" },
+    "status": { "type": "string" }
+  },
+  "additionalProperties": true
+}
