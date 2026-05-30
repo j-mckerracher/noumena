@@ -620,6 +620,40 @@ describe("checkIdempotency", () => {
     expect(result!.reason!.priorPatchId).toBe("patch_EXISTING001");
   });
 
+  it("returns undefined when existing patch has status rejected (allows retry)", () => {
+    const patch = makePatch({ clientPatchId: "test-idem-rejected" });
+
+    const mockDb = {
+      prepare: vi.fn().mockReturnValue({
+        get: vi.fn().mockReturnValue({
+          patch_id: "patch_REJECTED001",
+          client_patch_id: "test-idem-rejected",
+          status: "rejected",
+        }),
+      }),
+    } as unknown as import("better-sqlite3").Database;
+
+    const result = checkIdempotency(patch, mockDb);
+    expect(result).toBeUndefined();
+  });
+
+  it("returns undefined when existing patch has status queued_review (allows retry)", () => {
+    const patch = makePatch({ clientPatchId: "test-idem-queued" });
+
+    const mockDb = {
+      prepare: vi.fn().mockReturnValue({
+        get: vi.fn().mockReturnValue({
+          patch_id: "patch_QUEUED001",
+          client_patch_id: "test-idem-queued",
+          status: "queued_review",
+        }),
+      }),
+    } as unknown as import("better-sqlite3").Database;
+
+    const result = checkIdempotency(patch, mockDb);
+    expect(result).toBeUndefined();
+  });
+
   it("returns undefined when clientPatchId not found in DB", () => {
     const patch = makePatch({ clientPatchId: "test-new-001" });
 

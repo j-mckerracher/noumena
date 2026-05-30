@@ -397,7 +397,7 @@ export function checkIdempotency(
   }
 
   const existing = getPatchByClientId(db, patch.clientPatchId);
-  if (existing) {
+  if (existing && existing.status === "applied") {
     return {
       verdict: "noop",
       reason: {
