@@ -136,6 +136,14 @@ function formatJsonValue(val: unknown, depth: number): string {
 
   if (Array.isArray(val)) {
     if (val.length === 0) return "[]";
+    // Short arrays of simple values (strings, numbers, booleans) render inline
+    const allSimple = val.every(
+      (item) => typeof item === "string" || typeof item === "number" || typeof item === "boolean",
+    );
+    if (allSimple) {
+      const items = val.map((item) => formatJsonValue(item, depth + 1));
+      return `[${items.join(", ")}]`;
+    }
     const items = val.map((item) => `${childIndent}${formatJsonValue(item, depth + 1)}`);
     return `[\n${items.join(",\n")}\n${indent}]`;
   }
@@ -231,6 +239,31 @@ function serializeElement(
     return `${indent}${openTag}</${tag}>`;
   }
 
+  // Special case: block element with a single block child that itself is
+  // purely inline content — render on one line (e.g., <blockquote><p>text</p></blockquote>)
+  if (el.children.length === 1 && el.children[0]!.type === "element") {
+    const onlyChild = el.children[0]!.element;
+    const childTag = onlyChild.tagName.toLowerCase();
+    const childIsBlock = !(onlyChild.inline ?? INLINE_ELEMENTS.has(childTag));
+    if (childIsBlock) {
+      const childHasOnlyInline = onlyChild.children.every(
+        (c) => c.type === "text" || (c.type === "element" && (c.element.inline ?? INLINE_ELEMENTS.has(c.element.tagName))),
+      );
+      if (childHasOnlyInline) {
+        const innerContent = serializeChildrenInline(onlyChild.children, depth);
+        const childSortedAttrs = sortAttributes(onlyChild.attributes);
+        let childOpen: string;
+        if (childSortedAttrs.length === 0) {
+          childOpen = `<${childTag}>`;
+        } else {
+          const childAttrStr = formatAttributes(childSortedAttrs);
+          childOpen = `<${childTag} ${childAttrStr}>`;
+        }
+        return `${indent}${openTag}${childOpen}${innerContent}</${childTag}></${tag}>`;
+      }
+    }
+  }
+
   // Multi-line content
   const childLines = serializeChildren(el.children, depth + 1);
   return `${indent}${openTag}\n${childLines}\n${indent}</${tag}>`;
@@ -241,9 +274,20 @@ function serializeElement(
  */
 function serializeChildrenInline(children: BlockChild[], depth: number): string {
   return children
-    .map((child) => {
+    .map((child, idx) => {
       if (child.type === "text") {
-        return escapeHtml(child.text.trim());
+        let text = child.text;
+        // Collapse whitespace runs to single space
+        text = text.replace(/\s+/g, " ");
+        // Trim leading whitespace only for the first child
+        if (idx === 0) {
+          text = text.trimStart();
+        }
+        // Trim trailing whitespace only for the last child
+        if (idx === children.length - 1) {
+          text = text.trimEnd();
+        }
+        return escapeHtml(text);
       }
       if (child.type === "element") {
         return serializeElement(child.element, depth, true);

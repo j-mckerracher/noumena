@@ -148,6 +148,14 @@ export function resolveTarget(
 }
 
 /**
+ * Strip "sha256:" prefix from a hash string for normalized comparison.
+ * base hashes from doc info carry the prefix; computeBlockHash returns raw hex.
+ */
+function stripHashPrefix(h: string): string {
+  return h.startsWith("sha256:") ? h.slice(7) : h;
+}
+
+/**
  * Determine the default target role for an operation.
  * Per §15.1 table.
  */
@@ -254,7 +262,7 @@ function evaluateOp(
     case "append_only": {
       // §17.1: full document revision mismatch does NOT reject
       // emit warning base_revision_changed_append_merged when stale
-      const isStale = baseRevision !== state.revision;
+      const isStale = stripHashPrefix(baseRevision) !== stripHashPrefix(state.revision);
       if (isStale) {
         warnings.push({
           code: "base_revision_changed_append_merged",
@@ -295,9 +303,9 @@ function evaluateOp(
         };
       }
 
-      // Compare current block hash with expected
+      // Compare current block hash with expected (normalized for sha256: prefix).
       const currentHash = block.blockHash;
-      if (expectedHash !== currentHash) {
+      if (stripHashPrefix(expectedHash) !== stripHashPrefix(currentHash ?? "")) {
         return {
           op,
           resolvedBlockId,

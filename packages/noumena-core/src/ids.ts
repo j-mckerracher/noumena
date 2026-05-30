@@ -16,7 +16,7 @@
 const ENCODING = "0123456789ABCDEFGHJKMNPQRSTVWXYZ" as const;
 
 /** Valid ID prefixes. */
-export type IdPrefix = "doc" | "blk" | "ev" | "evt" | "note";
+export type IdPrefix = "doc" | "blk" | "ev" | "evt" | "note" | "pat" | "rev";
 
 const RANDOM_LEN = 16; // 16 random chars (80 bits)
 const TIME_LEN = 10; // 10 time chars (48 bits, ms since epoch)
@@ -32,6 +32,8 @@ export const ID_PATTERNS: Record<IdPrefix, RegExp> = {
   ev: /^ev_[0-9A-HJKMNP-TV-Z]{26}$/,
   evt: /^evt_[0-9A-HJKMNP-TV-Z]{26}$/,
   note: /^note_[0-9A-HJKMNP-TV-Z]{26}$/,
+  pat: /^pat_[0-9A-HJKMNP-TV-Z]{26}$/,
+  rev: /^rev_[0-9A-HJKMNP-TV-Z]{26}$/,
 };
 
 /**

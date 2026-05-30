@@ -144,6 +144,43 @@ export {
   computeAllBlockHashes,
 } from "./computeRevision.js";
 
+// Apply patch (mutation ops)
+export {
+  applyPatch,
+  escapeHtml,
+  sanitizeSummaryFragment,
+} from "./applyPatch.js";
+export type {
+  ApplyPatchResult,
+  SanitizeResult,
+} from "./applyPatch.js";
+
+// Patch submit & dry-run
+export {
+  submitPatch,
+  dryRunPatch,
+} from "./patchSubmit.js";
+export type {
+  PatchSubmitResult,
+  PatchSubmitSuccess,
+  PatchSubmitError,
+  PatchDryRunResult,
+} from "./patchSubmit.js";
+
+// Patch operations (approve, reject, rollback, status, show)
+export {
+  approvePatch,
+  rejectPatch,
+  rollbackPatch,
+  patchStatus,
+  patchShow,
+} from "./patchOps.js";
+export type {
+  PatchOpResult,
+  PatchOpSuccess,
+  PatchOpError,
+} from "./patchOps.js";
+
 // Fixture loading helpers (test utilities)
 export {
   fixturePath,
