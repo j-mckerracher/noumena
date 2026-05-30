@@ -22,11 +22,13 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { resolve, join } from "node:path";
+import { resolve, join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import * as fs from "node:fs";
 import * as os from "node:os";
 
-const CLI_PATH = resolve(import.meta.dirname, "../packages/noumena-cli/dist/main.js");
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const CLI_PATH = resolve(__dirname, "../packages/noumena-cli/dist/main.js");
 
 function cli(args) {
   try {
