@@ -5,8 +5,13 @@
   "type": "module",
   "scripts": {
     "build": "pnpm -r run build",
-    "test:phase1": "pnpm -r run test",
-    "demo:phase1": "node scripts/demo-phase1.mjs"
+    "test:phase1": "pnpm --filter @noumena/core --filter @noumena/cli run test",
+    "test:phase2": "pnpm --filter @noumena/desktop run test",
+    "demo:phase1": "node scripts/demo-phase1.mjs",
+    "dev:desktop": "pnpm --filter @noumena/desktop run dev",
+    "build:desktop": "pnpm --filter @noumena/desktop run build",
+    "start:desktop": "pnpm --filter @noumena/desktop run start",
+    "test:phase2:e2e": "pnpm --filter @noumena/desktop run test:e2e"
   },
   "engines": {
     "node": ">=20.0.0"

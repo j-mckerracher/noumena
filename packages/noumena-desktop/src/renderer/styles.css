@@ -1,0 +1,150 @@
+:root {
+  color-scheme: light dark;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-size: 14px;
+  --bg: #fafafa;
+  --bg-elev: #ffffff;
+  --border: #e3e3e3;
+  --text: #1a1a1a;
+  --text-muted: #6a6a6a;
+  --accent: #2d6cdf;
+  --danger: #c83a3a;
+  --success: #1b8c4a;
+  --warn: #b76d00;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #16181c;
+    --bg-elev: #1f2228;
+    --border: #2c3038;
+    --text: #e6e6e6;
+    --text-muted: #9aa0a8;
+    --accent: #5b9bff;
+  }
+}
+
+* { box-sizing: border-box; }
+html, body, #app { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--text); }
+
+.app-shell {
+  display: grid;
+  grid-template-columns: 240px 1fr 320px;
+  height: 100%;
+  overflow: hidden;
+}
+
+.pane {
+  border-right: 1px solid var(--border);
+  overflow: auto;
+  background: var(--bg-elev);
+}
+.pane:last-child { border-right: none; border-left: 1px solid var(--border); }
+.pane-header {
+  padding: 8px 12px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--bg-elev);
+}
+
+.tree { padding: 4px 0; }
+.tree-node { padding: 4px 12px; cursor: pointer; user-select: none; white-space: nowrap; }
+.tree-node:hover { background: rgba(127, 127, 127, 0.08); }
+.tree-node.selected { background: rgba(45, 108, 223, 0.16); color: var(--accent); }
+.tree-node .indent { display: inline-block; width: 14px; }
+.tree-node .icon { margin-right: 6px; opacity: 0.7; }
+
+.doc-view-wrap { padding: 24px 32px; max-width: 920px; margin: 0 auto; }
+.doc-view-wrap article { line-height: 1.55; }
+.doc-view-wrap h1, .doc-view-wrap h2, .doc-view-wrap h3 { line-height: 1.25; }
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 12px;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 24px;
+}
+.empty button {
+  font-size: 14px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+  color: var(--text);
+  cursor: pointer;
+}
+.empty button:hover { border-color: var(--accent); color: var(--accent); }
+
+.tabs { display: flex; border-bottom: 1px solid var(--border); }
+.tab {
+  padding: 8px 14px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.tab.active { color: var(--text); border-bottom-color: var(--accent); }
+.tab .count {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 6px;
+  font-size: 11px;
+  background: var(--accent);
+  color: white;
+  border-radius: 10px;
+}
+
+.section { padding: 12px 16px; }
+.row { display: flex; gap: 8px; align-items: center; padding: 6px 0; }
+.btn {
+  font-size: 13px;
+  padding: 6px 12px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+  color: var(--text);
+  cursor: pointer;
+}
+.btn.primary { background: var(--accent); color: white; border-color: var(--accent); }
+.btn.danger { background: var(--danger); color: white; border-color: var(--danger); }
+.btn:disabled { opacity: 0.4; cursor: default; }
+
+.diff { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; white-space: pre-wrap; }
+.diff .add { background: rgba(27, 140, 74, 0.18); }
+.diff .del { background: rgba(200, 58, 58, 0.18); text-decoration: line-through; }
+
+.history-item { padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+.history-item .kind { font-weight: 600; }
+.history-item .ts { color: var(--text-muted); font-size: 11px; }
+
+.toast-wrap {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 9999;
+}
+.toast {
+  padding: 10px 14px;
+  border-radius: 6px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+  max-width: 360px;
+  font-size: 13px;
+}
+.toast.error { border-color: var(--danger); }
+.toast.success { border-color: var(--success); }

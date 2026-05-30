@@ -89,10 +89,46 @@ noumena patch show <vault> <id> --format=block-diff
 
 ```
 packages/
-  noumena-core/    Core logic: parsing, patching, conflict policies, vault ops
-  noumena-cli/     CLI plumbing only — delegates all logic to core
+  noumena-core/     Core logic: parsing, patching, conflict policies, vault ops
+  noumena-cli/      CLI plumbing only — delegates all logic to core
+  noumena-desktop/  Phase 2: read-only Electron viewer/review shell
 scripts/
   demo-phase1.mjs  End-to-end dogfood loop script
 ```
 
-All domain logic lives in `noumena-core`. The CLI (`noumena-cli`) is pure command routing and exit-code mapping.
+All domain logic lives in `noumena-core`. The CLI (`noumena-cli`) is pure command routing and exit-code mapping. The desktop app (`noumena-desktop`) is a hardened Electron shell that wraps `noumena-core` in-process — no new mutation primitives.
+
+## Phase 2: Desktop viewer
+
+Read-only viewer + queued-review approver. Wraps the Phase 1 core; never bypasses it. No Tiptap editor.
+
+```bash
+# Dev (Vite + Electron, hot reload)
+pnpm dev:desktop
+
+# Build all artifacts (main, preload, renderer)
+pnpm build:desktop
+
+# Launch built app
+pnpm start:desktop
+
+# Phase 2 unit tests
+pnpm test:phase2
+```
+
+Capabilities:
+
+- Open vault via OS file picker (vault must be initialized with `noumena vault init`).
+- Recent vaults remembered between launches.
+- File tree of `.html` documents.
+- Read-only Noumena-native HTML preview (rendered from the on-disk article element, validated through `validateDocument`).
+- Pending review queue with Approve / Reject buttons — delegate to `approvePatch` / `rejectPatch` in `@noumena/core`.
+- Block diff view via `patchShow --format=block-diff`.
+- Document history list with rollback of the latest applied patch.
+- Live refresh via `chokidar` watcher when files or `.noumena/` change externally (e.g. CLI patches in another terminal).
+
+Security defaults:
+
+- `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`, `webSecurity: true`.
+- Strict CSP set via `webRequest.onHeadersReceived`.
+- Renderer never imports `@noumena/core` and never touches the filesystem directly — every operation goes through typed IPC to the main process.

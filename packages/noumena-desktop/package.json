@@ -1,0 +1,40 @@
+{
+  "name": "@noumena/desktop",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "dist/main.js",
+  "scripts": {
+    "build:main": "node scripts/build-main.mjs",
+    "build:preload": "node scripts/build-preload.mjs",
+    "build:renderer": "vite build",
+    "build": "pnpm build:main && pnpm build:preload && pnpm build:renderer",
+    "dev:renderer": "vite",
+    "dev": "concurrently -k -n vite,main \"pnpm dev:renderer\" \"node scripts/build-main.mjs --watch\"",
+    "start": "electron dist/main.js",
+    "package": "electron-builder",
+    "test": "vitest run",
+    "test:e2e": "playwright test --config playwright.config.ts"
+  },
+  "dependencies": {
+    "@noumena/core": "workspace:*",
+    "chokidar": "^4.0.3",
+    "electron-store": "^10.0.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0",
+    "@sveltejs/vite-plugin-svelte": "^5.0.3",
+    "@tsconfig/svelte": "^5.0.4",
+    "@types/node": "^22.0.0",
+    "concurrently": "^9.1.0",
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8",
+    "esbuild": "^0.25.0",
+    "playwright": "^1.49.0",
+    "svelte": "^5.16.0",
+    "svelte-check": "^4.1.4",
+    "typescript": "^5.8.0",
+    "vite": "^6.0.0",
+    "vitest": "^3.2.0"
+  }
+}

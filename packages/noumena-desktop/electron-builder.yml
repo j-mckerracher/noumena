@@ -1,0 +1,18 @@
+appId: dev.noumena.desktop
+productName: Noumena
+directories:
+  output: release
+  buildResources: build
+files:
+  - dist/**
+  - package.json
+mac:
+  target:
+    - dmg
+  category: public.app-category.productivity
+win:
+  target:
+    - nsis
+linux:
+  target:
+    - AppImage
