@@ -65,11 +65,11 @@ const VALID_POLICIES = new Set<string>([
 // ---------------------------------------------------------------------------
 
 const ROLE_ALLOWED_POLICIES: Record<string, Set<string>> = {
-  metadata: new Set(["merge_text"]),
-  summary: new Set(["replace_requires_clean_base"]),
-  notes: new Set(["append_only"]),
-  evidence: new Set(["append_only"]),
-  agent_events: new Set(["append_only"]),
+  metadata: new Set(["merge_text", "locked"]),
+  summary: new Set(["replace_requires_clean_base", "manual_review", "locked"]),
+  notes: new Set(["append_only", "locked"]),
+  evidence: new Set(["append_only", "locked"]),
+  agent_events: new Set(["append_only", "locked"]),
 };
 
 // ---------------------------------------------------------------------------

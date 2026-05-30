@@ -98,6 +98,22 @@ export type {
 // HTML parser
 export { parseNoumenaHtml } from "./parseNoumenaHtml.js";
 
+// Document validation
+export { validateDocument } from "./validateDocument.js";
+export type { ValidationIssue, ValidationResult } from "./validateDocument.js";
+
+// Document create
+export { createDocument } from "./docCreate.js";
+export type { DocCreateResult, DocCreateSuccess, DocCreateError } from "./docCreate.js";
+
+// Document info
+export { getDocInfo } from "./docInfo.js";
+export type { DocInfoResult, DocInfoSuccess, DocInfoError, RoleInfo } from "./docInfo.js";
+
+// Vault doctor
+export { runDoctor } from "./doctor.js";
+export type { DoctorResult, DoctorSuccess, DoctorError, DoctorIssue } from "./doctor.js";
+
 // Canonical serialization
 export { canonicalSerialize, canonicalJsonSerialize } from "./canonicalSerialize.js";
 export { canonicalSerializeBlock } from "./canonicalSerializeBlock.js";
