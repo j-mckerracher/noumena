@@ -78,6 +78,39 @@ export {
 } from "./patchSchema.js";
 export type { PatchSchemaError, PatchValidationResult } from "./patchSchema.js";
 
+// Types
+export type {
+  DocumentId,
+  BlockId,
+  NoumenaRole,
+  ConflictPolicy,
+  NoumenaMetadataV1,
+  NoumenaBlock,
+  NoumenaArticle,
+  NoumenaDocument,
+  FileClass,
+  ParseResult,
+  BlockElement,
+  BlockChild,
+  SerializableElement,
+} from "./types.js";
+
+// HTML parser
+export { parseNoumenaHtml } from "./parseNoumenaHtml.js";
+
+// Canonical serialization
+export { canonicalSerialize, canonicalJsonSerialize } from "./canonicalSerialize.js";
+export { canonicalSerializeBlock } from "./canonicalSerializeBlock.js";
+
+// Revision and block hash computation
+export {
+  sha256,
+  computeRevision,
+  computeRevisionFromDocument,
+  computeBlockHash,
+  computeAllBlockHashes,
+} from "./computeRevision.js";
+
 // Fixture loading helpers (test utilities)
 export {
   fixturePath,
