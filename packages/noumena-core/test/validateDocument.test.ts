@@ -507,8 +507,41 @@ describe("validateDocument — error codes", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Fixture-based tests — all invalid fixtures produce errors
+// Fixture-based tests — all invalid fixtures produce exact expected error codes
 // ---------------------------------------------------------------------------
+
+/**
+ * Expected error codes for each invalid fixture, validated against the actual
+ * validator output. The array order matches sorted error codes (with
+ * duplicates preserved) so a simple deep-equal catches wrong, missing, or
+ * extra error codes.
+ *
+ * WI-5034224 AC-002 / AC-006: exact expected error codes per DoD.
+ */
+const EXPECTED_FIXTURE_ERRORS: Map<string, string[]> = new Map([
+  ["agent-events-missing-ol.invalid.html", ["agent_events_missing_ol", "block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "wrong_element_for_role"]],
+  ["duplicate-block-id.invalid.html", ["block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "duplicate_block_id", "wrong_element_for_role"]],
+  ["duplicate-role.invalid.html", ["block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "duplicate_role", "wrong_element_for_role"]],
+  ["evidence-missing-ol.invalid.html", ["block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "evidence_missing_ol", "wrong_element_for_role"]],
+  ["forbidden-iframe.invalid.html", ["block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "forbidden_element", "wrong_element_for_role"]],
+  ["forbidden-revision-meta.invalid.html", ["block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "forbidden_revision_meta", "wrong_element_for_role"]],
+  ["forbidden-script.invalid.html", ["block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "forbidden_element", "wrong_element_for_role"]],
+  ["invalid-document-id.invalid.html", ["block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "invalid_document_id", "wrong_element_for_role"]],
+  ["invalid-metadata-json.invalid.html", ["block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "metadata_invalid_json", "wrong_element_for_role"]],
+  ["javascript-url.invalid.html", ["block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "forbidden_url_scheme", "wrong_element_for_role"]],
+  ["missing-agent-events-role.invalid.html", ["block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "missing_required_role", "wrong_element_for_role"]],
+  ["missing-doctype.invalid.html", ["block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "missing_document_article", "wrong_element_for_role"]],
+  ["missing-document-article.invalid.html", ["missing_document_article"]],
+  ["missing-evidence-role.invalid.html", ["block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "missing_required_role", "wrong_element_for_role"]],
+  ["missing-metadata-role.invalid.html", ["block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "missing_required_role"]],
+  ["missing-notes-role.invalid.html", ["block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "missing_required_role", "wrong_element_for_role"]],
+  ["missing-schema-meta.invalid.html", ["block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "missing_document_article", "wrong_element_for_role"]],
+  ["missing-summary-role.invalid.html", ["block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "missing_required_role", "wrong_element_for_role"]],
+  ["multiple-document-articles.invalid.html", ["missing_document_article"]],
+  ["policy-not-allowed-for-role.invalid.html", ["block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "policy_not_allowed_for_role", "wrong_element_for_role"]],
+  ["unknown-conflict-policy.invalid.html", ["block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "unknown_conflict_policy", "wrong_element_for_role"]],
+  ["unknown-schema-version.invalid.html", ["block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "block_missing_conflict_policy", "unknown_schema_version", "wrong_element_for_role"]],
+]);
 
 describe("validateDocument — fixture-based invalid documents", () => {
   const invalidFixtureDir = fixturePath("validation/invalid", "");
@@ -520,11 +553,20 @@ describe("validateDocument — fixture-based invalid documents", () => {
     // Directory may not exist in test env
   }
 
+  it("has expected error metadata for every invalid fixture", () => {
+    expect(invalidFiles.length).toBeGreaterThan(0);
+    for (const f of invalidFiles) {
+      expect(EXPECTED_FIXTURE_ERRORS.has(f)).toBe(true);
+    }
+  });
+
   for (const filename of invalidFiles) {
-    it(`${filename} produces at least one error`, () => {
+    it(`${filename} produces exact expected error codes`, () => {
       const html = loadInvalidFixture(filename);
       const result = validateDocument(html);
-      expect(result.errors.length).toBeGreaterThan(0);
+      const actualCodes = result.errors.map((e) => e.code).sort();
+      const expectedCodes = EXPECTED_FIXTURE_ERRORS.get(filename) ?? [];
+      expect(actualCodes).toEqual(expectedCodes);
       expect(result.patchable).toBe(false);
     });
   }
