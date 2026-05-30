@@ -69,6 +69,23 @@ export type {
   WriteTransactionResult,
 } from "./writeTransaction.js";
 
+// Patch evaluation engine
+export {
+  evaluatePatch,
+  checkIdempotency,
+  resolveTarget,
+  buildDocumentState,
+} from "./evaluatePatch.js";
+export type {
+  PatchOp,
+  ParsedPatch,
+  EvalWarning,
+  OpEvalResult,
+  PatchVerdict,
+  PatchEvalResult,
+  DocumentState,
+} from "./evaluatePatch.js";
+
 // Patch schema validation
 export {
   validatePatchSchema,
